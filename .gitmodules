@@ -1,0 +1,3 @@
+[submodule "send_runsummary"]
+	path = send_runsummary
+	url = https://github.com/okawak/send_runsummary.git

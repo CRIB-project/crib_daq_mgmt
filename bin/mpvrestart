@@ -1,0 +1,8 @@
+#!/bin/sh
+
+current=$(cd $(dirname $0);pwd)
+cd $current/../babilib
+
+poetry run python3 src/restart.py
+
+cd -

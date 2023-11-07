@@ -1,0 +1,16 @@
+[tool.poetry]
+name = "babilib"
+version = "0.1.0"
+description = "DAQ scripts for MPV configuration"
+authors = ["KodaiOkawa <okawa@cns.s.u-tokyo.ac.jp>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.9"
+ruamel-yaml = "^0.18.5"
+sockets = "^1.0.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

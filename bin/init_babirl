@@ -1,0 +1,22 @@
+#!/bin/sh
+
+if [[ `whoami` != "root" ]]
+then
+    echo "Run as superuser"
+    exit 1
+fi
+
+BAB_DIR=/home/daq/babirl
+
+echo "start babissm, babimo, babinfo, babild, babian..."
+$BAB_DIR/bin/babissm
+$BAB_DIR/bin/babimo
+$BAB_DIR/bin/babinfo
+$BAB_DIR/bin/babild -l 1
+$BAB_DIR/bin/babian
+
+current=$(cd $(dirname $0);pwd)
+
+sh $current/mpvrestart
+
+echo "finished."
