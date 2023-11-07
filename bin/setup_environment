@@ -1,0 +1,102 @@
+#!/bin/sh
+
+set -u
+
+DAQ_USER="daq"
+
+
+main() {
+    need_cmd poetry
+    need_cmd babicmd
+
+    current=$(cd $(dirname $0);pwd)
+    say "start initial setup..."
+
+    # send runsummary setting
+    say "start send_runsummary setup..."
+    setup_runsummary || exit 1
+    usage_runsummary
+
+    # babilib setting
+    say "start babilib setup..."
+    setup_babilib || exit 1
+
+    # babicmd setting
+    setup_babirl || exit 1
+
+    say "finished!"
+    cd $current
+}
+
+setup_runsummary() {
+    cd ${HOME}/exp/${EXP_NAME}/send_runsummary
+    poetry install
+    readline "Enter the FULL path of the copying json file: " json_path
+    ensure cp $json_path ${HOME}/exp/${EXP_NAME}/send_runsummary/json/
+}
+
+usage_runsummary() {
+    echo "prepare the google spread sheet for the run summary -> modify the conf.yaml"
+    echo "then please check the connection by"
+    echo "> cd send_runsummary"
+    echo "> poetry run pytest"
+    echo ""
+}
+
+setup_babilib() {
+    cd ${HOME}/exp/${EXP_NAME}/babilib
+    poetry install
+}
+
+setup_babirl() {
+    babicmd 
+}
+
+# general function
+readline() {
+    while true; do
+        read -p "$1" "$2"
+        read -p "Is it OK? (y/n): " _answer
+        case ${_answer} in
+            y)
+                break
+                ;;
+        esac
+    done
+}
+
+say() {
+    printf "\33[1mdaq setup\33[0m: %s\n" "$1"
+}
+
+err() {
+    say "$1" >&2
+    exit 1
+}
+
+need_cmd() {
+    if ! check_cmd "$1"; then
+        err "need '$1' (command not found)"
+    fi
+}
+
+check_cmd() {
+    command -v "$1" > /dev/null 2>&1
+}
+
+# Run a command that should never fail. If the command fails execution
+# will immediately terminate with an error showing the failing
+# command.
+ensure() {
+    if ! "$@"; then err "command failed: $*"; fi
+}
+
+
+if [[ `whoami` != "$DAQ_USER" ]]
+then
+    echo "Run as '$DAQ_USER' user"
+    exit 1
+fi
+
+main "$@" || exit 1
+
