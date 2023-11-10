@@ -1,50 +1,48 @@
 #!/bin/bash
 
-current=$(cd $(dirname $0);pwd)
+current=$(
+  cd $(dirname $0)
+  pwd
+)
 datadir=$current/ridf
 
 time=$(date)
 
-source $current/babilib/.venv/bin/activate
-python3 $current/babilib/src/sto.py
+# stop signal sending
+source "$current/babilib/.venv/bin/activate"
+python3 "$current/babilib/src/sto.py"
 
-ridf_file=`ls -lrt $datadir/*.ridf | tail -n 1 | awk '{print $9}'`
+# get ridf file name
+ridf_file=$(ls -lrt "$datadir/*.ridf" | tail -n 1 | awk '{print $9}')
 file=${ridf_file##*/}
 run_info=${file%.*}
 
-run_num=`echo $run_info | rev | cut -c -4 | rev`
-
-last_line=`tail -n 1 $current/log`
+last_line=$(tail -n 1 "$current/log")
 if [[ "$last_line" =~ "---" ]]; then
-  source $current/send_runsummary/.venv/bin/activate
-  python3 $current/send_runsummary/src/send_runsummary.py $run_num
   exit 0
 fi
 
-flag=true
+# log setting
+is_firstrun=true
 shopt -s extglob lastpipe
-tac $current/log | while read line; do
-  log=`echo $line | cut -f 2 -s -d "@"`
+tac "$current/log" | while read -r line; do
+  log=$(echo "$line" | cut -f 2 -s -d "@")
   if [ "$log" = "" ]; then
     continue
   fi
 
-  if [[ "$log" =~ "$run_info" ]]; then
-    echo "${time} stop" >> $current/log
+  if [[ "$log" =~ $run_info ]]; then
+    echo "${time} stop" >>"$current/log"
   else
-    echo "${time} stop   @${run_info}" >> $current/log
-    source $current/send_runsummary/.venv/bin/activate
-    python3 $current/send_runsummary/src/send_runsummary.py $run_num
+    echo "${time} stop   @${run_info}" >>"$current/log"
   fi
 
-  echo "---" >> $current/log
-  flag=false
+  echo "---" >>"$current/log"
+  is_firstrun=false
   break
 done
 
-if [ $flag = "true" ]; then
-  echo "${time} stop   @${run_info}" >> $current/log
-  echo "---" >> $current/log
-  source $current/send_runsummary/.venv/bin/activate
-  python3 $current/send_runsummary/src/send_runsummary.py $run_num
+if [ $is_firstrun = "true" ]; then
+  echo "${time} stop   @${run_info}" >>"$current/log"
+  echo "---" >>"$current/log"
 fi

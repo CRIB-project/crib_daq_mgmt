@@ -1,28 +1,30 @@
-#!/bin/sh
+#!/bin/bash
 
 set -u
 
 DAQ_USER="daq"
 
-if [[ `whoami` != "$DAQ_USER" ]]
-then
+if [[ $(whoami) != "$DAQ_USER" ]]; then
     echo "Run as '$DAQ_USER' user"
     exit 1
 fi
 
 while true; do
     printf "Have you set all MPVs to 'Write OK'? (y/n): "
-    read _answer
+    read -r _answer
     case ${_answer} in
-        y)
-            break
-            ;;
+    y)
+        break
+        ;;
     esac
 done
 
-current=$(cd $(dirname $0);pwd)
-cd $current/../babilib
+current=$(
+    cd "$(dirname "$0")" || exit 1
+    pwd
+)
+cd "$current/../babilib" || exit 1
 
-poetry run python3 src/set_EBsize.py $1
+poetry run python3 src/set_EBsize.py "$1"
 
-cd -
+cd - || exit 1

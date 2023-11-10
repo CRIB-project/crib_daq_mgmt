@@ -1,14 +1,11 @@
-#!/bin/sh
+#!/bin/bash
 
-if [[ `whoami` != "root" ]]
-then
+if [[ $(whoami) != "root" ]]; then
     echo "Run as superuser"
     exit 1
 fi
 
-
 echo "removing pid files..."
-echo `ls /home/daq/babirl/run/babi*`
 rm -f /home/daq/babirl/run/babi*
 
 echo "killing process..."

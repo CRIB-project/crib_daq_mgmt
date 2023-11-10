@@ -1,7 +1,9 @@
-#!/bin/sh
+#!/bin/bash
 
-current=$(cd $(dirname $0);pwd)
+current=$(
+    cd "$(dirname "$0")" || exit 1
+    pwd
+)
 
-source $current/../babilib/.venv/bin/activate
-python3 $current/../babilib/src/restart.py
-
+source "$current/../babilib/.venv/bin/activate"
+python3 "$current/../babilib/src/restart.py"

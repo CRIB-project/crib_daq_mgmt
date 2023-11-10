@@ -1,17 +1,19 @@
-#!/bin/sh
+#!/bin/bash
 
 set -u
 
 DAQ_USER="daq"
-DATA_DIRECTORY="/data2/"
+DATA_DIRECTORY="/data2"
 LOG_PATH="/home/daq/public_html/log/log"
-
 
 main() {
     need_cmd poetry
     need_cmd babicmd
 
-    current=$(cd $(dirname $0);pwd)
+    current=$(
+        cd "$(dirname "$0")" || exit 1
+        pwd
+    )
     say "start initial setting..."
 
     # send runsummary setting
@@ -29,17 +31,17 @@ main() {
 
     # synbolic link of the log
     say "start log setting..."
-    ln -fs ${HOME}/exp/${EXP_NAME}/log $LOG_PATH
+    ln -fs "${HOME}/exp/${EXP_NAME}/log" "$LOG_PATH"
 
     say "finished!"
-    cd $current
+    cd "$current" || exit 1
 }
 
 setup_runsummary() {
-    cd ${HOME}/exp/${EXP_NAME}/send_runsummary
+    cd "${HOME}/exp/${EXP_NAME}/send_runsummary" || exit 1
     poetry install
     readline "Enter the FULL path of the copying json file: " json_path
-    ensure cp $json_path ${HOME}/exp/${EXP_NAME}/send_runsummary/json/
+    ensure cp "$json_path" "${HOME}/exp/${EXP_NAME}/send_runsummary/json/"
 }
 
 usage_runsummary() {
@@ -51,42 +53,42 @@ usage_runsummary() {
 }
 
 setup_babilib() {
-    cd ${HOME}/exp/${EXP_NAME}/babilib
+    cd "${HOME}/exp/${EXP_NAME}/babilib" || exit 1
     poetry install
 }
 
 setup_babirl() {
     readline "Enter the new runname (usually run): " runname
-    babicmd localhost setrunname $runname
+    babicmd localhost setrunname "$runname"
 
     readline "Enter the new runnumber (usually 0): " runnumber
-    babicmd localhost setrunnumber $runnumber
+    babicmd localhost setrunnumber "$runnumber"
 
     say "setting the babissm config..."
-    babicmd localhost setssminfo start ${HOME}/exp/${EXP_NAME}/start.sh
-    babicmd localhost setssminfo stop ${HOME}/exp/${EXP_NAME}/stop.sh
+    babicmd localhost setssminfo start "${HOME}/exp/${EXP_NAME}/start.sh"
+    babicmd localhost setssminfo stop "${HOME}/exp/${EXP_NAME}/stop.sh"
     babicmd localhost setssminfo on
 
     say "setting the HD (hard disk) config..."
-    if [ ! -d $DATA_DIRECTORY/${EXP_NAME} ] ; then
-        ensure mkdir -p $DATA_DIRECTORY/${EXP_NAME}
+    if [ ! -d "$DATA_DIRECTORY/${EXP_NAME}" ]; then
+        ensure mkdir -p "$DATA_DIRECTORY/${EXP_NAME}"
     fi
-    babicmd localhost sethdlist 1 path $DATA_DIRECTORY/${EXP_NAME}
+    babicmd localhost sethdlist 1 path "$DATA_DIRECTORY/${EXP_NAME}"
     babicmd localhost sethdlist 1 on
 
-    babicmd localhost sethdlist 2 path ${HOME}/exp/${EXP_NAME}/ridf
+    babicmd localhost sethdlist 2 path "${HOME}/exp/${EXP_NAME}/ridf"
     babicmd localhost sethdlist 2 on
 }
 
 # general function
 readline() {
     while true; do
-        read -p "$1" "$2"
-        read -p "Is it OK? (y/n): " _answer
+        read -rp "$1" "$2"
+        read -rp "Is it OK? (y/n): " _answer
         case ${_answer} in
-            y)
-                break
-                ;;
+        y)
+            break
+            ;;
         esac
     done
 }
@@ -107,7 +109,7 @@ need_cmd() {
 }
 
 check_cmd() {
-    command -v "$1" > /dev/null 2>&1
+    command -v "$1" >/dev/null 2>&1
 }
 
 # Run a command that should never fail. If the command fails execution
@@ -117,12 +119,9 @@ ensure() {
     if ! "$@"; then err "command failed: $*"; fi
 }
 
-
-if [[ `whoami` != "$DAQ_USER" ]]
-then
+if [[ $(whoami) != "$DAQ_USER" ]]; then
     echo "Run as '$DAQ_USER' user"
     exit 1
 fi
 
 main "$@" || exit 1
-

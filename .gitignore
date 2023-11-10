@@ -1,6 +1,4 @@
 log
-ridf/*.ridf
-bin/daq/__pycache__/
-bin/daq/.venv/
-init_module/__pycache__/
+__pycache__/
 .venv/
+.vscode/
