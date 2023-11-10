@@ -1,0 +1,19 @@
+#!/bin/bash
+
+DAQ_USER="daq"
+
+if [[ $(whoami) != "$DAQ_USER" ]]; then
+    echo "Run as '$DAQ_USER' user"
+    exit 1
+fi
+
+current=$(
+    cd "$(dirname "$0")" || exit 1
+    pwd
+)
+
+cd "$current/../send_runsummary" || exit 1
+
+poetry run python3 src/send_runsummary.py "$@"
+
+cd - || exit 1
