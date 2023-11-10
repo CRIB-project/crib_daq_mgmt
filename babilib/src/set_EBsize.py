@@ -1,9 +1,11 @@
+import os
 from ruamel.yaml import YAML
 import sys
 import babilib
 
 
 if __name__ == "__main__":
+    work_dir = os.path.dirname(__file__) + "/../"
     args = sys.argv
     if len(args) != 2:
         print("usage: python3 set_EBsize.py size")
@@ -12,7 +14,7 @@ if __name__ == "__main__":
     hosts_mpv = []
 
     yaml = YAML()
-    with open("ip_table.yaml", "r", encoding="utf-8") as fin:
+    with open(work_dir + "ip_table.yaml", "r", encoding="utf-8") as fin:
         table_yaml = yaml.load(fin)
 
     hosts_mpv.append(table_yaml["E7MPV"])

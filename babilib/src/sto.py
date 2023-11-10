@@ -1,10 +1,12 @@
+import os
 import babilib
 from ruamel.yaml import YAML
 
 
 if __name__ == "__main__":
+    work_dir = os.path.dirname(__file__) + "/../"
     yaml = YAML()
-    with open("ip_table.yaml", "r", encoding="utf-8") as fin:
+    with open(work_dir + "ip_table.yaml", "r", encoding="utf-8") as fin:
         table_yaml = yaml.load(fin)
 
     main_mpv = table_yaml["J1MPV_main"]
