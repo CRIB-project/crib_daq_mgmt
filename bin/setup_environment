@@ -65,18 +65,20 @@ setup_babirl() {
     babicmd localhost setrunnumber "$runnumber"
 
     say "setting the babissm config..."
-    babicmd localhost setssminfo start "${HOME}/exp/${EXP_NAME}/start.sh"
-    babicmd localhost setssminfo stop "${HOME}/exp/${EXP_NAME}/stop.sh"
-    babicmd localhost setssminfo on
+    say "input babissm start script path: ${HOME}/exp/${EXP_NAME}/start.sh"
+    babicmd localhost setssminfo start
+    say "input babissm start script path: ${HOME}/exp/${EXP_NAME}/stop.sh"
+    babicmd localhost setssminfo stop
+    babicmd localhost setssminfo on &>/dev/null
 
     say "setting the HD (hard disk) config..."
     if [ ! -d "$DATA_DIRECTORY/${EXP_NAME}" ]; then
         ensure mkdir -p "$DATA_DIRECTORY/${EXP_NAME}"
     fi
-    babicmd localhost sethdlist 1 path "$DATA_DIRECTORY/${EXP_NAME}"
-    babicmd localhost sethdlist 1 on
+    babicmd localhost sethdlist 1 path "$DATA_DIRECTORY/${EXP_NAME}" &>/dev/null
+    babicmd localhost sethdlist 1 on &>/dev/null
 
-    babicmd localhost sethdlist 2 path "${HOME}/exp/${EXP_NAME}/ridf"
+    babicmd localhost sethdlist 2 path "${HOME}/exp/${EXP_NAME}/ridf" &>/dev/null
     babicmd localhost sethdlist 2 on
 }
 

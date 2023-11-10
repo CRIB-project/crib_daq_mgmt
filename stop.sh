@@ -1,7 +1,7 @@
 #!/bin/bash
 
 current=$(
-  cd $(dirname $0)
+  cd "$(dirname "$0")" || exit 1
   pwd
 )
 datadir=$current/ridf
@@ -13,7 +13,7 @@ source "$current/babilib/.venv/bin/activate"
 python3 "$current/babilib/src/sto.py"
 
 # get ridf file name
-ridf_file=$(ls -lrt "$datadir/*.ridf" | tail -n 1 | awk '{print $9}')
+ridf_file=$(find "$datadir"/*.ridf | sort -nr | head -n 1)
 file=${ridf_file##*/}
 run_info=${file%.*}
 

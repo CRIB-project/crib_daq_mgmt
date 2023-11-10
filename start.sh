@@ -1,7 +1,7 @@
 #!/bin/bash
 
 current=$(
-    cd $(dirname $0)
+    cd "$(dirname "$0")" || exit 1
     pwd
 )
 time=$(date)

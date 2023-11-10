@@ -27,4 +27,4 @@ cd "$current/../babilib" || exit 1
 
 poetry run python3 src/set_EBsize.py "$1"
 
-cd - || exit 1
+cd - &>/dev/null || exit 1
