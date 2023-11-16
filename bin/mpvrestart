@@ -5,5 +5,5 @@ current=$(
     pwd
 )
 
-source "$current/../babilib/.venv/bin/activate"
-python3 "$current/../babilib/src/restart.py"
+source "$current/../pybabilib/.venv/bin/activate"
+python3 "$current/../pybabilib/src/restart.py"

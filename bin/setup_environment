@@ -53,7 +53,7 @@ usage_runsummary() {
 }
 
 setup_babilib() {
-    cd "${HOME}/exp/${EXP_NAME}/babilib" || exit 1
+    cd "${HOME}/exp/${EXP_NAME}/pybabilib" || exit 1
     poetry install
 }
 
