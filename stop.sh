@@ -9,8 +9,8 @@ datadir=$current/ridf
 time=$(date)
 
 # stop signal sending
-source "$current/babilib/.venv/bin/activate"
-python3 "$current/babilib/src/sto.py"
+source "$current/pybabilib/.venv/bin/activate"
+python3 "$current/pybabilib/src/sto.py"
 
 # get ridf file name
 ridf_file=$(find "$datadir"/*.ridf | sort -nr | head -n 1)
