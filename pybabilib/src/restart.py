@@ -1,5 +1,5 @@
 import os
-from ruamel.yaml import YAML
+import yaml
 import babilib
 
 
@@ -7,9 +7,8 @@ if __name__ == "__main__":
     work_dir = os.path.dirname(__file__) + "/../"
     hosts_mpv = []
 
-    yaml = YAML()
     with open(work_dir + "ip_table.yaml", "r", encoding="utf-8") as fin:
-        table_yaml = yaml.load(fin)
+        table_yaml = yaml.safe_load(fin)
 
     hosts_mpv.append(table_yaml["E7MPV"])
     hosts_mpv.append(table_yaml["J1MPV_main"])
