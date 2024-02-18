@@ -6,7 +6,7 @@ authors = ["KodaiOkawa <okawa@cns.s.u-tokyo.ac.jp>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.9"
+python = "^3.12"
 sockets = "^1.0.0"
 pyyaml = "^6.0.1"
 
