@@ -6,7 +6,7 @@ if [[ $(whoami) != "root" ]]; then
 fi
 
 echo "removing pid files..."
-rm -f /home/daq/babirl/run/babi*
+rm -f /var/run/babi*
 
 echo "killing process..."
 pkill babi
