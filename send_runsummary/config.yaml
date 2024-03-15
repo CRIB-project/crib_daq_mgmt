@@ -1,0 +1,6 @@
+# style setting
+sheetname: "test_runsummary"
+
+# constant setting
+path_prinfo: "/home/daq/babirl/ridfutil/prinfo"
+path_data: "/home/daq/exp/expname/ridf/" # need "/" in the last
