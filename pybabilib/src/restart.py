@@ -4,7 +4,7 @@ import babilib
 
 
 if __name__ == "__main__":
-    work_dir = os.path.dirname(__file__) + "/../"
+    work_dir = os.path.dirname(__file__) + "/../../"
 
     with open(work_dir + "config.yaml", "r", encoding="utf-8") as fin:
         config_yaml = yaml.safe_load(fin)

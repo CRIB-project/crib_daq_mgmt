@@ -5,7 +5,7 @@ import babilib
 
 
 if __name__ == "__main__":
-    work_dir = os.path.dirname(__file__) + "/../"
+    work_dir = os.path.dirname(__file__) + "/../../"
     args = sys.argv
     if len(args) != 2:
         print("usage: python set_EBsize.py [size]")

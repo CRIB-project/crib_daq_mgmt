@@ -1,20 +1,25 @@
-## Usage
+# send_runsummary
 
-Assume that you installed "poetry" and "pyenv".
+python script to send ridf information to the google spread sheet
 
-```console
-> git clone https://github.com/okawak/send_runsummary.git
-> cd send_runsummary
-> poetry install
-> poetry run pytest
+## usage
+
+```sh
+poetry install
+poetry update
+```
+
+test code
+
+```sh
+poetry run pytest
 ```
 
 You need to prepare the google spread sheet correctly (like json key).
 Then you can pass the pytest.
 
-```console
-> poetry run python3 src/send_runsummary.py [run_number]
-> poetry run python3 src/send_runsummary.py [run_min] [run_max] # runnumber
-> poetry run python3 src/send_runsummary.py # send all
+```sh
+poetry run python src/send_runsummary.py [run_number]
+poetry run python src/send_runsummary.py [run_min] [run_max] # runnumber
+poetry run python src/send_runsummary.py # send all
 ```
-

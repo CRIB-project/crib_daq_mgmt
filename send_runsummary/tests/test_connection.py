@@ -8,14 +8,14 @@ ERROR_MESSAGE_CONNECT = "Failed to connect to the spread sheet"
 
 
 def connect():
-    work_dir = os.path.dirname(__file__) + "/../"
-    json_array = glob.glob(work_dir + "json/*.json")
+    work_dir = os.path.dirname(__file__) + "/../../"
+    json_array = glob.glob(work_dir + "send_runsummary/json/*.json")
 
     yaml = YAML()
     with open(work_dir + "config.yaml", "r", encoding="utf-8") as fin:
-        yaml_input = yaml.load(fin)
+        config_yaml = yaml.load(fin)
 
-    in_spread_name = yaml_input["sheetname"]
+    in_spread_name = config_yaml["runsummary_config"]["sheetname"]
     os.environ["GSPREAD_SILENCE_WARNINGS"] = "1"
     try:
         gc = gspread.service_account(filename=json_array[0])

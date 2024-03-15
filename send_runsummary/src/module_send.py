@@ -9,7 +9,7 @@ from ruamel.yaml import YAML
 
 
 class Sender:
-    __work_dir = os.path.dirname(__file__) + "/../"
+    __work_dir = os.path.dirname(__file__) + "/../../"
     __run_min = -1
     __run_max = -1
     __all = False
@@ -31,22 +31,22 @@ class Sender:
 
         yaml = YAML()
         with open(self.__work_dir + "config.yaml", "r", encoding="utf-8") as fin:
-            conf_yaml = yaml.load(fin)
+            config_yaml = yaml.load(fin)
 
-        self.__spread_name = conf_yaml["sheetname"]
-        self.__path_prinfo = conf_yaml["path_prinfo"]
-        self.__path_data = conf_yaml["path_data"]
+        self.__spread_name = config_yaml["runsummary_config"]["sheetname"]
+        self.__path_prinfo = config_yaml["runsummary_config"]["prinfo"]
+        self.__path_data = self.__work_dir + "ridf/"
 
         self.set_worksheet()
 
     def usage(self) -> None:
         print("ERROR: input error or there are no such ridf file")
-        print("USAGE: python3 send_runsummary.py [runnumber]")
-        print("       python3 send_runsummary.py [min] [max]")
-        print("       python3 send_runsummary.py (-> send all ridf files)")
+        print("USAGE: python send_runsummary.py [runnumber]")
+        print("       python send_runsummary.py [min] [max]")
+        print("       python send_runsummary.py (-> send all ridf files)")
 
     def set_worksheet(self) -> None:
-        json_array = glob.glob(self.__work_dir + "json/*.json")
+        json_array = glob.glob(self.__work_dir + "send_runsummary/json/*.json")
         os.environ["GSPREAD_SILENCE_WARNINGS"] = "1"
         gc = gspread.service_account(filename=json_array[0])
         sh = gc.open(self.__spread_name)
