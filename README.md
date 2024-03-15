@@ -1,5 +1,7 @@
 # Usage
+
 It assume the directory structure like this:
+
 ```shell
 > cd ~
 > tree
@@ -16,55 +18,44 @@ It assume the directory structure like this:
 -- snip --
 ```
 
-
-
 ```shell
 > cd ~/exp
-> git clone --recursive https://github.com/okawak/crib_daq_mgmt.git expname
+> git clone https://github.com/okawak/crib_daq_mgmt.git expname
 ```
 
 ## Initial setup
 
 The .bashrc/.zshrc setup
+
 ```shell
 export EXP_NAME="hoge"
 ```
 
 Initial setup
+
 ```shell
 > cd bin
 > ./setup_environment
 ```
 
 ## useful scripts
-username: root or daq
 
-1. init_babirl (root)
+```sh
+# initialize the babirl process
+sudo ./bin/init_babirl
 
-`./init_babirl`
+# kill the babirl process
+sudo ./bin/kill_babirl
 
-2. kill_babirl (root)
+# restart the MPV process
+./bin/mpvrestart
 
-`./kill_babirl`
+# change the event build size
+./bin/set_EBsize [number]
 
-3. mpvrestart (root, daq)
+# setup new experiment environment
+./bin/setup_environment
 
-`./mpvrestart`
-
-4. set_EBsize (daq)
-
-`./set_EBsize number`
-
-5. setup_environment (daq)
-
-`./setup_environment`
-
-6. do_sync.sh (root, daq)
-
-`./do_sync.sh`
-
-
-# sub repository
-
-[send_runsummary](https://github.com/okawak/send_runsummary/tree/main)
-
+# backup the data file to the analysis PC
+./bin/do_sync.sh
+```
