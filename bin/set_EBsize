@@ -25,7 +25,7 @@ current=$(
 )
 cd "$current/../pybabilib" || exit 1
 
-poetry run python3 src/set_EBsize.py "$1"
+poetry run python src/set_EBsize.py "$1"
 
 cd - &>/dev/null || exit 1
 

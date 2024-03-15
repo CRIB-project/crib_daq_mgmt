@@ -3,7 +3,7 @@
 set -u
 
 DAQ_USER="daq"
-DATA_DIRECTORY="/data2"
+DATA_DIRECTORY="/Data"
 LOG_PATH="/home/daq/public_html/log/log"
 
 main() {
@@ -24,6 +24,7 @@ main() {
     # babilib setting
     say "start babilib setting..."
     setup_babilib || exit 1
+    usage_babilib
 
     # babirl setting
     say "start babirl setting..."
@@ -40,46 +41,57 @@ main() {
 setup_runsummary() {
     cd "${HOME}/exp/${EXP_NAME}/send_runsummary" || exit 1
     poetry install
-    readline "Enter the FULL path of the copying json file: " json_path
-    ensure cp "$json_path" "${HOME}/exp/${EXP_NAME}/send_runsummary/json/"
+    poetry update
+    echo "==========================================================="
+    echo " please copy json key file to send the google spread sheet"
+    echo "==========================================================="
 }
 
 usage_runsummary() {
     echo "prepare the google spread sheet for the run summary -> modify the conf.yaml"
     echo "then please check the connection by"
     echo "> cd send_runsummary"
-    echo "> poetry run pytest"
+    echo "> poetry run pytest -v"
     echo ""
 }
 
 setup_babilib() {
     cd "${HOME}/exp/${EXP_NAME}/pybabilib" || exit 1
     poetry install
+    poetry update
+}
+
+usage_babilib() {
+    echo "modify the config.yaml for each experiment setup"
+    echo "then please check the connection by"
+    echo "> cd pybabilib"
+    echo "> poetry run pytest -v"
+    echo ""
 }
 
 setup_babirl() {
     readline "Enter the new runname (usually run): " runname
-    babicmd localhost setrunname "$runname"
+    babicmd localhost setrunname "$runname" >/dev/null 2>&1
 
     readline "Enter the new runnumber (usually 0): " runnumber
-    babicmd localhost setrunnumber "$runnumber"
+    babicmd localhost setrunnumber "$runnumber" >/dev/null 2>&1
 
     say "setting the babissm config..."
     say "input babissm start script path: ${HOME}/exp/${EXP_NAME}/start.sh"
     babicmd localhost setssminfo start
     say "input babissm start script path: ${HOME}/exp/${EXP_NAME}/stop.sh"
     babicmd localhost setssminfo stop
-    babicmd localhost setssminfo on &>/dev/null
+    babicmd localhost setssminfo on >/dev/null 2>&1
 
     say "setting the HD (hard disk) config..."
     if [ ! -d "$DATA_DIRECTORY/${EXP_NAME}" ]; then
-        ensure mkdir -p "$DATA_DIRECTORY/${EXP_NAME}"
+        sudo mkdir -p "$DATA_DIRECTORY/${EXP_NAME}"
     fi
-    babicmd localhost sethdlist 1 path "$DATA_DIRECTORY/${EXP_NAME}" &>/dev/null
-    babicmd localhost sethdlist 1 on &>/dev/null
+    babicmd localhost sethdlist 0 path "$DATA_DIRECTORY/${EXP_NAME}" >/dev/null 2>&1
+    babicmd localhost sethdlist 0 on >/dev/null 2>&1
 
-    babicmd localhost sethdlist 2 path "${HOME}/exp/${EXP_NAME}/ridf" &>/dev/null
-    babicmd localhost sethdlist 2 on
+    babicmd localhost sethdlist 1 path "${HOME}/exp/${EXP_NAME}/ridf" >/dev/null 2>&1
+    babicmd localhost sethdlist 1 on >/dev/null 2>&1
 }
 
 # general function
