@@ -97,10 +97,10 @@ setup_babirl() {
     babicmd localhost setssminfo on >/dev/null 2>&1
 
     say "setting the HD (hard disk) config..."
-    if [ ! -d "$DATA_DIRECTORY/${EXP_NAME}" ]; then
-        sudo mkdir -p "$DATA_DIRECTORY/${EXP_NAME}"
+    if [ ! -d "${DATA_DIRECTORY}/${EXP_NAME}" ]; then
+        sudo mkdir -p "${DATA_DIRECTORY}/${EXP_NAME}"
     fi
-    babicmd localhost sethdlist 0 path "$DATA_DIRECTORY/${EXP_NAME}" >/dev/null 2>&1
+    babicmd localhost sethdlist 0 path "${DATA_DIRECTORY}/${EXP_NAME}" >/dev/null 2>&1
     babicmd localhost sethdlist 0 on >/dev/null 2>&1
 
     babicmd localhost sethdlist 1 path "${HOME}/exp/${EXP_NAME}/ridf" >/dev/null 2>&1
@@ -108,6 +108,8 @@ setup_babirl() {
 
     cd "${HOME}/exp/${EXP_NAME}/pybabilib" || exit 1
     poetry run python src/init_setting.py
+
+    babicmd localhost getconfig
 }
 
 # general function
