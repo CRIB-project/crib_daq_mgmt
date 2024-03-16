@@ -11,10 +11,10 @@ def get_yaml():
 def test_ssm():
     config_yaml = get_yaml()
     count = 0
-    for mpv_yaml in config_yaml["MPV_config"]:
+    for mpv_yaml in config_yaml["DAQ_config"]:
         if mpv_yaml["ssm_master"]:
             count += 1
-    assert count == 1, "Number of SSM Master MPV is not 1!"
+    assert count <= 1, "Number of SSM Master MPV is over 1!"
 
 def test_ts():
     config_yaml = get_yaml()

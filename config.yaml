@@ -1,20 +1,31 @@
 # NOTE:
 # need only one ssm_master MPV
 # need zero or one ts master MPV
-MPV_config:
+# MPV efn should be over 100
+DAQ_config:
+  - name: localhost
+    efn: 1
+    ip_address: localhost
+    use: false
+    ssm_master: false
+    ts_master: false
+
   - name: J1ADC
+    efn: 120
     ip_address: 192.168.1.20
     use: true
     ssm_master: true # start/stop signal
     ts_master: false # timestamp master
 
   - name: J1TDC
+    efn: 121
     ip_address: 192.168.1.21
     use: true
     ssm_master: false # start/stop signal
     ts_master: true # timestamp master
 
   - name: E7MPV
+    efn: 122
     ip_address: 192.168.1.22
     use: true
     ssm_master: false # start/stop signal
