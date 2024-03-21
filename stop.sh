@@ -9,9 +9,11 @@ datadir=$current/ridf
 time=$(date)
 
 # stop signal sending
+# shellcheck disable=SC1091
 source "$current/pybabilib/.venv/bin/activate"
 python "$current/pybabilib/src/sto.py"
 
+# this is DAQ log setting (not necessary)
 # get ridf file name
 ridf_file=$(find "$datadir"/*.ridf | sort -nr | head -n 1)
 file=${ridf_file##*/}

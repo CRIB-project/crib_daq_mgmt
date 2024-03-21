@@ -18,6 +18,7 @@ current=$(
     pwd
 )
 
-sh "$current/mpvrestart"
+# shellcheck disable=SC1091
+. "$current/mpvrestart"
 
 echo "finished."
