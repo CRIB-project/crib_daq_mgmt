@@ -3,8 +3,8 @@
 # need zero or one ts master MPV
 # MPV efn should be over 100
 DAQ_config:
-  - name: localhost
-    efn: 1
+  - name: localhost # if you use cribabies
+    efn: 1 # event flagment number, you can check in babicon
     ip_address: localhost
     use: false
     ssm_master: false
@@ -27,7 +27,7 @@ DAQ_config:
   - name: E7MPV
     efn: 122
     ip_address: 192.168.1.22
-    use: true
+    use: false
     ssm_master: false # start/stop signal
     ts_master: false # timestamp master
 
@@ -35,5 +35,4 @@ DAQ_config:
 # prepare the google spread sheet in advance
 runsummary_config:
   sheetname: test_runsummary
-  prinfo: /usr/babirl/ridfutil/prinfo
-  scaler: false # send scaler info (currently not support)
+  prinfo: /usr/babirl/ridfutil/prinfo # path to the prinfo command
