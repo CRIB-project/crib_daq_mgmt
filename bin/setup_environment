@@ -15,7 +15,7 @@ main() {
 
   # Resolve the directory containing this script
   script_dir=$(dirname "$(realpath "$0")")
-  exp_name=$(basename "$script_dir")
+  exp_name=$(echo "$script_dir" | awk -F'/' '{print $(NF-1)}')
 
   # Locate the Git repository root
   if git -C "$script_dir" rev-parse --show-toplevel >/dev/null 2>&1; then
@@ -88,7 +88,7 @@ setup_uv_env() {
 
     say "Creating a new Python virtual environment..."
     pushd "$repo_root" >/dev/null || err "Failed to change directory to $repo_root"
-    uv new "$VENV_NAME" || err "Failed to create a virtual environment."
+    uv venv "$VENV_NAME" || err "Failed to create a virtual environment."
     uv sync || err "Failed to install Python packages."
     popd >/dev/null || err "Failed to return to the previous directory."
   else
@@ -131,6 +131,8 @@ setup_runsummary() {
         say "Running connection test..."
         say "(under development)"
         #python -m pytest -v || err "Connection test failed"
+      else
+        say "Skipping connection test..."
       fi
     else
       err "The specified JSON key file does not exist: $json_path"
@@ -146,55 +148,78 @@ setup_babirl() {
   if [[ "$setup_mode" == "default" ]]; then
     runname="run"
   elif [[ "$setup_mode" == "interactive" ]]; then
-    runname=$(gum input --prompt "Enter the new runname" --value "run" --placeholder "usually 'run' or 'data'")
+    runname=$(gum input \
+      --prompt "Enter the new runname: " \
+      --value "run" \
+      --placeholder "usually 'run' or 'data'")
   fi
   babicmd localhost setrunname "$runname" >/dev/null 2>&1
+  print_babicmd "setrunname $runname"
 
   local runnumber
   if [[ "$setup_mode" == "default" ]]; then
     runnumber="0"
   elif [[ "$setup_mode" == "interactive" ]]; then
-    runname=$(gum input --prompt "Enter the new runnumber" --value "0" --placeholder "usually '0' or '999'")
+    runnumber=$(gum input \
+      --prompt "Enter the new runnumber: " \
+      --value "0" \
+      --placeholder "usually '0' or '999'")
   fi
   babicmd localhost setrunnumber "$runnumber" >/dev/null 2>&1
+  print_babicmd "setrunnumber $runnumber"
 
   local start_script
   if [[ "$setup_mode" == "default" ]]; then
     start_script="$repo_root/start.sh"
   elif [[ "$setup_mode" == "interactive" ]]; then
-    start_script=$(gum input --prompt "Enter the path for a start script" --value "$repo_root/start.sh" --placeholder "path to the start script")
+    start_script=$(gum input \
+      --prompt "Enter the path for a start script: " \
+      --value "$repo_root/start.sh" \
+      --placeholder "path to the start script")
   fi
   babicmd localhost setssminfo start "$start_script" >/dev/null 2>&1
+  print_babicmd "setssminfo start $start_script"
 
   local stop_script
   if [[ "$setup_mode" == "default" ]]; then
     stop_script="$repo_root/stop.sh"
   elif [[ "$setup_mode" == "interactive" ]]; then
-    stop_script=$(gum input --prompt "Enter the path for a stop script" --value "$repo_root/stop.sh" --placeholder "path to the stop script")
+    stop_script=$(gum input \
+      --prompt "Enter the path for a stop script: " \
+      --value "$repo_root/stop.sh" \
+      --placeholder "path to the stop script")
   fi
   babicmd localhost setssminfo stop "$stop_script" >/dev/null 2>&1
+  print_babicmd "setssminfo stop $stop_script"
   babicmd localhost setssminfo on >/dev/null 2>&1
+  print_babicmd "setssminfo on"
 
   local ex_hdd_dir
   if [[ "$setup_mode" == "default" ]]; then
     ex_hdd_dir="$DATA_DIRECTORY/$exp_name"
   elif [[ "$setup_mode" == "interactive" ]]; then
-    ex_hdd_dir=$(gum input --prompt "Enter the path for storing raw data in external HDD" --value "$DATA_DIRECTORY/$exp_name" --placeholder "path to the directory storing raw data")
+    ex_hdd_dir=$(gum input \
+      --prompt "Enter the path for storing raw data: " \
+      --value "$DATA_DIRECTORY/$exp_name" \
+      --placeholder "path to the directory storing raw data")
   fi
   if [ ! -d "$ex_hdd_dir" ]; then
     say "making data directory to external HDD..."
     sudo mkdir -p "$ex_hdd_dir"
   fi
   babicmd localhost sethdlist 0 path "$ex_hdd_dir" >/dev/null 2>&1
+  print_babicmd "sethdlist 0 path $ex_hdd_dir"
   babicmd localhost sethdlist 0 on >/dev/null 2>&1
+  print_babicmd "sethdlist 0 on"
 
   babicmd localhost sethdlist 1 path "$repo_root/ridf" >/dev/null 2>&1
+  print_babicmd "sethdlist 1 path $repo_root/ridf"
   babicmd localhost sethdlist 1 on >/dev/null 2>&1
+  print_babicmd "sethdlist 1 on"
 
-  if [[ "$setup_mode" == "default" ]] ||
-    { [[ "$setup_mode" == "interactive" ]] && gum confirm "Based on config.yaml, setup will be performed, is it Okay?"; }; then
-    uv run pybabilib/init_setting.py >dev/null 2>&1
-  fi
+  pushd "$repo_root" >/dev/null || err "Failed to change directory to $repo_root"
+  uv run pybabilib/init_setting.py >/dev/null
+  popd >/dev/null || err "Failed to return to the previous directory."
 
   say "please check if the babirl is set correctly"
   babicmd localhost getconfig
@@ -202,6 +227,10 @@ setup_babirl() {
 
 say() {
   printf "\33[1mdaq setup\33[0m: %s\n" "$1"
+}
+
+print_babicmd() {
+  printf "\33[1m[babirl command]\33[0m: %s\n" "$1"
 }
 
 err() {
