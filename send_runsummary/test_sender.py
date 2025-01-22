@@ -51,7 +51,15 @@ class TestSenderGoogleSheetsConnection(unittest.TestCase):
         self.mock_sheet.range.return_value = [mock_cell]
 
         sender = Sender(self.dummy_args)
-        test_data = {"runnumber": "1"}
+        test_data = {
+            "runname": "test_run",
+            "runnumber": "0",
+            "start": "start time",
+            "stop": "stop time",
+            "date": "date",
+            "header": "header comment",
+            "ender": "ender comment",
+        }
         test_size = "10MB"
 
         sender._Sender__update_worksheet(test_data, test_size)
