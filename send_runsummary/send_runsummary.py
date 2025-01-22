@@ -1,5 +1,5 @@
 import sys
-from module_send import Sender
+from sender import Sender
 
 
 if __name__ == "__main__":

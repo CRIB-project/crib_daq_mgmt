@@ -39,7 +39,6 @@ validate_git_repo() {
 }
 
 get_setup_mode() {
-  say "Setup performs based on config.yaml. Need to modify in advance."
   local choice
   choice=$(gum choose \
     "Set default values" \
@@ -49,10 +48,7 @@ get_setup_mode() {
   case "$choice" in
   "Set default values") echo "default" ;;
   "Interactive setup") echo "interactive" ;;
-  "Exit")
-    say "Setup process canceled."
-    exit 0
-    ;;
+  "Exit") return ;;
   *) err "Invalid choice: $choice" ;;
   esac
 }
@@ -119,7 +115,7 @@ setup_runsummary_interactive() {
     copy_json_key "$json_path"
     if gum confirm "Do you want to run the connection test? (need to prepare Google Sheets in advance)"; then
       say "Running connection test..."
-      say "(under development)"
+      uv run pytest send_runsummary/test_sender.py
     else
       say "Skipping connection test..."
     fi
@@ -191,6 +187,7 @@ main() {
   validate_user
 
   # Setup paths and variables
+  say "Setup performs based on config.yaml. Need to modify in advance."
   local script_dir repo_root exp_name setup_mode
   script_dir=$(dirname "$(realpath "$0")")
   exp_name=$(echo "$script_dir" | awk -F'/' '{print $(NF-1)}')
@@ -201,6 +198,10 @@ main() {
 
   # Get setup mode from user
   setup_mode=$(get_setup_mode)
+  if [[ -z "$setup_mode" ]]; then
+    say "Setup process canceled."
+    exit 0
+  fi
 
   # Run setup procedures
   setup_python_env "$setup_mode" "$repo_root"
