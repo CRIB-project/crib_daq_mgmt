@@ -1,19 +1,40 @@
-import os
 import yaml
 import babilib
+from pathlib import Path
+
+
+def load_config(config_path):
+    """Load and parse the YAML configuration file"""
+    with open(config_path, "r", encoding="utf-8") as fin:
+        return yaml.safe_load(fin)
+
+
+def send_pulses(ip_address, commands):
+    """Send pulse commands to MPV device"""
+    for cmd in commands:
+        babilib.execarg(ip_address, f"mpvctrl {cmd}")
+
+
+def process_mpv_device(mpv_yaml):
+    """Process MPV device based on its configuration"""
+    if mpv_yaml["efn"] <= 100:
+        return
+
+    ip_address = mpv_yaml["ip_address"]
+
+    if mpv_yaml["ssm_master"]:
+        commands = ["nout0 pulse", "nout1 pulse", "pulse 0x1"]
+        send_pulses(ip_address, commands)
+
+    if mpv_yaml["ts_master"]:
+        commands = ["nout0 pulse", "pulse 0x1"]
+        send_pulses(ip_address, commands)
 
 
 if __name__ == "__main__":
-    work_dir = os.path.dirname(__file__) + "/../"
-    with open(work_dir + "config.yaml", "r", encoding="utf-8") as fin:
-        config_yaml = yaml.safe_load(fin)
+    work_dir = Path(__file__).parent.parent
+    config_path = work_dir / "config.yaml"
 
-    for mpv_yaml in config_yaml["DAQ_config"]:
-        if mpv_yaml["ssm_master"] and mpv_yaml["efn"] > 100:
-            babilib.execarg(mpv_yaml["ip_address"], f"mpvctrl nout0 pulse")
-            babilib.execarg(mpv_yaml["ip_address"], f"mpvctrl nout1 pulse")
-            babilib.execarg(mpv_yaml["ip_address"], f"mpvctrl pulse 0x1")
-
-        if mpv_yaml["ts_master"] and mpv_yaml["efn"] > 100:
-            babilib.execarg(mpv_yaml["ip_address"], f"mpvctrl nout0 pulse")
-            babilib.execarg(mpv_yaml["ip_address"], f"mpvctrl pulse 0x1")
+    config = load_config(config_path)
+    for mpv_yaml in config["DAQ_config"]:
+        process_mpv_device(mpv_yaml)

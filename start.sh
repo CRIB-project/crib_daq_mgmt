@@ -1,14 +1,18 @@
 #!/bin/bash
 
-current=$(
-    cd "$(dirname "$0")" || exit 1
-    pwd
-)
-time=$(date)
+set -eu
 
-# shellcheck disable=SC1091
-source "$current/pybabilib/.venv/bin/activate"
-python "$current/pybabilib/src/sta.py"
+main() {
+  local script_dir timestamp
+  script_dir=$(dirname "$(realpath "$0")")
+  timestamp=$(date)
 
-# this is DAQ log setting (not necessary)
-echo "${time} start" >>"$current/log"
+  # shellcheck disable=SC1091
+  source "$script_dir/.venv/bin/activate"
+  python "$script_dir/pybabilib/sta.py"
+
+  # Log start time
+  echo "${timestamp} start" >>"$script_dir/log"
+}
+
+main "$@"

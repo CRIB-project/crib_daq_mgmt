@@ -1,50 +1,62 @@
 #!/bin/bash
 
-current=$(
-  cd "$(dirname "$0")" || exit 1
-  pwd
-)
-datadir=$current/ridf
+set -eu
 
-time=$(date)
+# Constants
+readonly SCRIPT_DIR
+SCRIPT_DIR=$(dirname "$(realpath "$0")")
+readonly LOG_FILE="$SCRIPT_DIR/log"
+readonly RIDF_DIR="$SCRIPT_DIR/ridf"
 
-# stop signal sending
-# shellcheck disable=SC1091
-source "$current/pybabilib/.venv/bin/activate"
-python "$current/pybabilib/src/sto.py"
+send_stop_signal() {
+  # shellcheck disable=SC1091
+  source "$SCRIPT_DIR/.venv/bin/activate"
+  python "$SCRIPT_DIR/pybabilib/sto.py"
+}
 
-# this is DAQ log setting (not necessary)
-# get ridf file name
-ridf_file=$(find "$datadir"/*.ridf | sort -nr | head -n 1)
-file=${ridf_file##*/}
-run_info=${file%.*}
+get_latest_run_info() {
+  local ridf_file
+  ridf_file=$(find "$RIDF_DIR"/*.ridf | sort -nr | head -n 1)
+  basename "${ridf_file%.*}"
+}
 
-last_line=$(tail -n 1 "$current/log")
-if [[ "$last_line" =~ "---" ]]; then
-  exit 0
-fi
+append_log() {
+  local timestamp run_info="$1"
+  timestamp=$(date)
 
-# log setting
-is_firstrun=true
-shopt -s extglob lastpipe
-tac "$current/log" | while read -r line; do
-  log=$(echo "$line" | cut -f 2 -s -d "@")
-  if [ "$log" = "" ]; then
-    continue
+  # Check if last line is separator
+  local last_line
+  last_line=$(tail -n 1 "$LOG_FILE")
+  [[ "$last_line" =~ "---" ]] && exit 0
+
+  # Find matching run in log
+  local found_match=false
+  local log_entry
+  shopt -s lastpipe
+  tac "$LOG_FILE" | while read -r line; do
+    log_entry=$(echo "$line" | cut -f 2 -s -d "@")
+    [[ -z "$log_entry" ]] && continue
+
+    if [[ "$log_entry" =~ $run_info ]]; then
+      echo "${timestamp} stop" >>"$LOG_FILE"
+    else
+      echo "${timestamp} stop   @${run_info}" >>"$LOG_FILE"
+    fi
+    echo "---" >>"$LOG_FILE"
+    found_match=true
+    break
+  done
+
+  # Handle first run case
+  if ! $found_match; then
+    echo "${timestamp} stop   @${run_info}" >>"$LOG_FILE"
+    echo "---" >>"$LOG_FILE"
   fi
+}
 
-  if [[ "$log" =~ $run_info ]]; then
-    echo "${time} stop" >>"$current/log"
-  else
-    echo "${time} stop   @${run_info}" >>"$current/log"
-  fi
+main() {
+  send_stop_signal
+  append_log "$(get_latest_run_info)"
+}
 
-  echo "---" >>"$current/log"
-  is_firstrun=false
-  break
-done
-
-if [ $is_firstrun = "true" ]; then
-  echo "${time} stop   @${run_info}" >>"$current/log"
-  echo "---" >>"$current/log"
-fi
+main "$@"
