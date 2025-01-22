@@ -188,15 +188,18 @@ main() {
 
   # Setup paths and variables
   say "Setup performs based on config.yaml. Need to modify in advance."
-  local script_dir repo_root exp_name setup_mode
+  local script_dir
   script_dir=$(dirname "$(realpath "$0")")
-  exp_name=$(echo "$script_dir" | awk -F'/' '{print $(NF-1)}')
 
-  # Locate Git repository root
+  local repo_root
   validate_git_repo "$script_dir"
   repo_root=$(git -C "$script_dir" rev-parse --show-toplevel)
 
+  local exp_name
+  exp_name=$(echo "$script_dir" | awk -F'/' '{print $(NF-1)}')
+
   # Get setup mode from user
+  local setup_mode
   setup_mode=$(get_setup_mode)
   if [[ -z "$setup_mode" ]]; then
     say "Setup process canceled."
