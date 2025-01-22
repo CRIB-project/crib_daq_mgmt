@@ -4,10 +4,10 @@ set -eu
 
 # Constants
 readonly DAQ_USER="daq"
-readonly SCRIPT_DIR
 SCRIPT_DIR=$(dirname "$(realpath "$0")")
-readonly REPO_ROOT
+readonly SCRIPT_DIR
 REPO_ROOT=$(git -C "$SCRIPT_DIR" rev-parse --show-toplevel)
+readonly REPO_ROOT
 
 # Helper functions
 say() {

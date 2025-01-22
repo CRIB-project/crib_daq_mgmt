@@ -2,16 +2,6 @@
 
 set -eu
 
-# Helper functions
-say() {
-  printf "\33[1mmpv restart\33[0m: %s\n" "$1"
-}
-
-err() {
-  say "ERROR: $1" >&2
-  exit 1
-}
-
 main() {
   local script_dir repo_root
   script_dir=$(dirname "$(realpath "$0")")

@@ -3,8 +3,8 @@
 set -eu
 
 # Constants
-readonly SCRIPT_DIR
 SCRIPT_DIR=$(dirname "$(realpath "$0")")
+readonly SCRIPT_DIR
 readonly LOG_FILE="$SCRIPT_DIR/log"
 readonly RIDF_DIR="$SCRIPT_DIR/ridf"
 
@@ -16,6 +16,9 @@ send_stop_signal() {
 
 get_latest_run_info() {
   local ridf_file
+  if ! compgen -G "$RIDF_DIR/*.ridf" >/dev/null; then
+    return 0
+  fi
   ridf_file=$(find "$RIDF_DIR"/*.ridf | sort -nr | head -n 1)
   basename "${ridf_file%.*}"
 }
@@ -28,6 +31,13 @@ append_log() {
   local last_line
   last_line=$(tail -n 1 "$LOG_FILE")
   [[ "$last_line" =~ "---" ]] && exit 0
+
+  # Handle empty run_info case
+  if [[ -z "$run_info" ]]; then
+    echo "${timestamp} stop" >>"$LOG_FILE"
+    echo "---" >>"$LOG_FILE"
+    return
+  fi
 
   # Find matching run in log
   local found_match=false
