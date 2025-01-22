@@ -2,229 +2,13 @@
 
 set -eu
 
-DAQ_USER="daq"
-DATA_DIRECTORY="/Data"
-LOG_PATH="/home/daq/public_html/log/log"
-VENV_NAME=".venv"
+# Constants
+readonly DAQ_USER="daq"
+readonly DATA_DIRECTORY="/Data"
+readonly LOG_PATH="/home/daq/public_html/log/log"
+readonly VENV_NAME=".venv"
 
-main() {
-  need_cmd git
-  need_cmd uv
-  need_cmd babicmd
-  need_cmd gum
-
-  # Resolve the directory containing this script
-  script_dir=$(dirname "$(realpath "$0")")
-  exp_name=$(echo "$script_dir" | awk -F'/' '{print $(NF-1)}')
-
-  # Locate the Git repository root
-  if git -C "$script_dir" rev-parse --show-toplevel >/dev/null 2>&1; then
-    repo_root=$(git -C "$script_dir" rev-parse --show-toplevel)
-  else
-    err "This script must be run from within a Git-managed project."
-  fi
-
-  # Present setup options to the user
-  choice=$(gum choose \
-    "Set default values" \
-    "Interactive setup" \
-    "Exit")
-
-  case "$choice" in
-  "Set default values")
-    if gum confirm "Setup performed based on config.yaml, is it Okay?"; then
-      say "Using default setup mode."
-    else
-      say "Setup process canceled."
-      exit 0
-    fi
-    setup_mode="default"
-    ;;
-  "Interactive setup")
-    if gum confirm "Setup performed based on config.yaml, is it Okay?"; then
-      say "Entering interactive setup mode."
-    else
-      say "Setup process canceled."
-      exit 0
-    fi
-    setup_mode="interactive"
-    ;;
-  "Exit")
-    say "Setup process canceled."
-    exit 0
-    ;;
-  *)
-    err "Invalid choice: $choice"
-    ;;
-  esac
-
-  # Configure Python environment
-  setup_uv_env
-
-  # send_runsummary setting
-  setup_runsummary
-
-  # babirl setting
-  setup_babirl
-
-  # synbolic link of the log
-  ln -fs "$repo_root/log" "$LOG_PATH"
-
-  say "Completed!"
-}
-
-setup_uv_env() {
-  say "Setting up Python environment..."
-  if [[ "$setup_mode" == "default" ]] ||
-    { [[ "$setup_mode" == "interactive" ]] && gum confirm "Do you want to install Python packages?"; }; then
-    if [[ -d "$repo_root/$VENV_NAME" ]]; then
-      say "The virtual environment directory '$VENV_NAME' already exists."
-      say "Synchronizing Python packages..."
-      pushd "$repo_root" >/dev/null || err "Failed to change directory to $repo_root"
-      uv sync || err "Failed to synchronize Python packages."
-      popd >/dev/null || err "Failed to return to the previous directory."
-      return
-    fi
-
-    say "Creating a new Python virtual environment..."
-    pushd "$repo_root" >/dev/null || err "Failed to change directory to $repo_root"
-    uv venv "$VENV_NAME" || err "Failed to create a virtual environment."
-    uv sync || err "Failed to install Python packages."
-    popd >/dev/null || err "Failed to return to the previous directory."
-  else
-    say "Setup process canceled. (need python to proceed)"
-    exit 0
-  fi
-}
-
-setup_runsummary() {
-  say "Setting up send_runsummary configuration..."
-  local keyfile
-  if [ -n "$RUNSUMMARY_KEY_PATH" ] && [ -e "$RUNSUMMARY_KEY_PATH" ]; then
-    keyfile="$RUNSUMMARY_KEY_PATH"
-  fi
-
-  if [[ "$setup_mode" == "default" ]]; then
-    if [ -n "$keyfile" ]; then
-      pushd "$repo_root" >/dev/null || err "Failed to change directory to $repo_root"
-      say "Copying JSON key file to send_runsummary/json directory..."
-      cp "$keyfile" "./send_runsummary/json" || err "Failed to copy JSON key file"
-      say "skip the connection test..."
-      popd >/dev/null || err "Failed to return to the previous directory."
-    else
-      say "'RUNSUMMARY_KEY_PATH' is not set or invalid. Skipping the send_runsummary setting."
-    fi
-  elif [[ "$setup_mode" == "interactive" ]]; then
-    pushd "$repo_root" >/dev/null || err "Failed to change directory to $repo_root"
-    local json_path
-    if gum confirm "Use the default path for JSON key? ($keyfile)?"; then
-      json_path="$keyfile"
-    else
-      json_path=$(gum input --placeholder "Enter the path to the Google Sheets API JSON key file")
-    fi
-
-    if [[ -f "$json_path" ]]; then
-      say "Copying JSON key file to send_runsummary/json directory..."
-      cp "$json_path" "./send_runsummary/json" || err "Failed to copy JSON key file"
-
-      if gum confirm "Do you want to run the connection test? (need to prepare Google Sheets in advance)"; then
-        say "Running connection test..."
-        say "(under development)"
-        #python -m pytest -v || err "Connection test failed"
-      else
-        say "Skipping connection test..."
-      fi
-    else
-      err "The specified JSON key file does not exist: $json_path"
-    fi
-    popd >/dev/null || err "Failed to return to the previous directory."
-  fi
-}
-
-setup_babirl() {
-  say "Setting up babirl configuration..."
-
-  local runname
-  if [[ "$setup_mode" == "default" ]]; then
-    runname="run"
-  elif [[ "$setup_mode" == "interactive" ]]; then
-    runname=$(gum input \
-      --prompt "Enter the new runname: " \
-      --value "run" \
-      --placeholder "usually 'run' or 'data'")
-  fi
-  babicmd localhost setrunname "$runname" >/dev/null 2>&1
-  print_babicmd "setrunname $runname"
-
-  local runnumber
-  if [[ "$setup_mode" == "default" ]]; then
-    runnumber="0"
-  elif [[ "$setup_mode" == "interactive" ]]; then
-    runnumber=$(gum input \
-      --prompt "Enter the new runnumber: " \
-      --value "0" \
-      --placeholder "usually '0' or '999'")
-  fi
-  babicmd localhost setrunnumber "$runnumber" >/dev/null 2>&1
-  print_babicmd "setrunnumber $runnumber"
-
-  local start_script
-  if [[ "$setup_mode" == "default" ]]; then
-    start_script="$repo_root/start.sh"
-  elif [[ "$setup_mode" == "interactive" ]]; then
-    start_script=$(gum input \
-      --prompt "Enter the path for a start script: " \
-      --value "$repo_root/start.sh" \
-      --placeholder "path to the start script")
-  fi
-  babicmd localhost setssminfo start "$start_script" >/dev/null 2>&1
-  print_babicmd "setssminfo start $start_script"
-
-  local stop_script
-  if [[ "$setup_mode" == "default" ]]; then
-    stop_script="$repo_root/stop.sh"
-  elif [[ "$setup_mode" == "interactive" ]]; then
-    stop_script=$(gum input \
-      --prompt "Enter the path for a stop script: " \
-      --value "$repo_root/stop.sh" \
-      --placeholder "path to the stop script")
-  fi
-  babicmd localhost setssminfo stop "$stop_script" >/dev/null 2>&1
-  print_babicmd "setssminfo stop $stop_script"
-  babicmd localhost setssminfo on >/dev/null 2>&1
-  print_babicmd "setssminfo on"
-
-  local ex_hdd_dir
-  if [[ "$setup_mode" == "default" ]]; then
-    ex_hdd_dir="$DATA_DIRECTORY/$exp_name"
-  elif [[ "$setup_mode" == "interactive" ]]; then
-    ex_hdd_dir=$(gum input \
-      --prompt "Enter the path for storing raw data: " \
-      --value "$DATA_DIRECTORY/$exp_name" \
-      --placeholder "path to the directory storing raw data")
-  fi
-  if [ ! -d "$ex_hdd_dir" ]; then
-    say "making data directory to external HDD..."
-    sudo mkdir -p "$ex_hdd_dir"
-  fi
-  babicmd localhost sethdlist 0 path "$ex_hdd_dir" >/dev/null 2>&1
-  print_babicmd "sethdlist 0 path $ex_hdd_dir"
-  babicmd localhost sethdlist 0 on >/dev/null 2>&1
-  print_babicmd "sethdlist 0 on"
-
-  babicmd localhost sethdlist 1 path "$repo_root/ridf" >/dev/null 2>&1
-  print_babicmd "sethdlist 1 path $repo_root/ridf"
-  babicmd localhost sethdlist 1 on >/dev/null 2>&1
-  print_babicmd "sethdlist 1 on"
-
-  pushd "$repo_root" >/dev/null || err "Failed to change directory to $repo_root"
-  uv run pybabilib/init_setting.py >/dev/null
-  popd >/dev/null || err "Failed to return to the previous directory."
-
-  say "please check if the babirl is set correctly"
-  babicmd localhost getconfig
-}
-
+# Helper functions
 say() {
   printf "\33[1mdaq setup\33[0m: %s\n" "$1"
 }
@@ -239,18 +23,194 @@ err() {
 }
 
 need_cmd() {
-  if ! check_cmd "$1"; then
+  if ! command -v "$1" >/dev/null 2>&1; then
     err "need '$1' (command not found)"
   fi
 }
 
-check_cmd() {
-  command -v "$1" >/dev/null 2>&1
+# Setup functions
+validate_user() {
+  [[ $(whoami) == "$DAQ_USER" ]] || err "Run as '$DAQ_USER' user."
 }
 
-if [[ $(whoami) != "$DAQ_USER" ]]; then
-  echo "Run as '$DAQ_USER' user"
-  exit 1
-fi
+validate_git_repo() {
+  local dir="$1"
+  git -C "$dir" rev-parse --show-toplevel >/dev/null 2>&1 || err "Not a Git repository."
+}
+
+get_setup_mode() {
+  say "Setup performs based on config.yaml. Need to modify in advance."
+  local choice
+  choice=$(gum choose \
+    "Set default values" \
+    "Interactive setup" \
+    "Exit")
+
+  case "$choice" in
+  "Set default values") echo "default" ;;
+  "Interactive setup") echo "interactive" ;;
+  "Exit")
+    say "Setup process canceled."
+    exit 0
+    ;;
+  *) err "Invalid choice: $choice" ;;
+  esac
+}
+
+setup_python_env() {
+  local _="$1" repo_root="$2"
+  say "Setting up Python environment..."
+  pushd "$repo_root" >/dev/null || err "Failed to change directory to $repo_root"
+
+  if [[ -d "$VENV_NAME" ]]; then
+    say "Virtual environment exists. Synchronizing packages..."
+    uv sync || err "Failed to synchronize Python packages."
+  else
+    say "Creating virtual environment..."
+    uv venv "$VENV_NAME" || err "Failed to create virtual environment."
+    uv sync || err "Failed to install Python packages."
+  fi
+
+  popd >/dev/null || err "Failed to return to the previous directory."
+}
+
+setup_runsummary() {
+  local mode="$1" repo_root="$2"
+  local keyfile="${RUNSUMMARY_KEY_PATH:-}"
+
+  say "Setting up send_runsummary configuration..."
+  local has_valid_keyfile=true
+  [[ -n "$keyfile" && -f "$keyfile" ]] || has_valid_keyfile=false
+
+  pushd "$repo_root" >/dev/null || err "Failed to change directory to $repo_root"
+
+  if [[ "$mode" == "default" ]]; then
+    if $has_valid_keyfile; then
+      copy_json_key "$keyfile"
+      say "skip the connection test..."
+    else
+      say "'RUNSUMMARY_KEY_PATH' is not set or invalid. Skipping the send_runsummary setting."
+    fi
+  else
+    setup_runsummary_interactive "$keyfile" "$has_valid_keyfile"
+  fi
+
+  popd >/dev/null || err "Failed to return to the previous directory."
+}
+
+copy_json_key() {
+  local keyfile="$1"
+  say "Copying JSON key file to send_runsummary/json directory..."
+  cp "$keyfile" "./send_runsummary/json" || err "Failed to copy JSON key file"
+}
+
+setup_runsummary_interactive() {
+  local default_keyfile="$1"
+  local has_valid_keyfile="$2"
+  local json_path
+
+  if $has_valid_keyfile && gum confirm "Use the default path for JSON key? ($default_keyfile)?"; then
+    json_path="$default_keyfile"
+  else
+    json_path=$(gum input --placeholder "Enter the path to the Google Sheets API JSON key file")
+  fi
+
+  if [[ -f "$json_path" ]]; then
+    copy_json_key "$json_path"
+    if gum confirm "Do you want to run the connection test? (need to prepare Google Sheets in advance)"; then
+      say "Running connection test..."
+      say "(under development)"
+    else
+      say "Skipping connection test..."
+    fi
+  else
+    say "The specified JSON key file does not exist: $json_path"
+    say "Skipping the send_runsummary setting."
+  fi
+}
+
+setup_babirl() {
+  local mode="$1" repo_root="$2" exp_name="$3"
+
+  say "Setting up babirl configuration..."
+  local runname runnumber start_script stop_script ex_hdd_dir
+  runname=$(prompt_value "$mode" "Enter the new runname: " "run")
+  runnumber=$(prompt_value "$mode" "Enter the new runnumber: " "0")
+  start_script=$(prompt_value "$mode" "Enter the path for a start script: " "$repo_root/start.sh")
+  stop_script=$(prompt_value "$mode" "Enter the path for a stop script: " "$repo_root/stop.sh")
+  ex_hdd_dir=$(prompt_value "$mode" "Enter the path for storing raw data: " "$DATA_DIRECTORY/$exp_name")
+  if [ ! -d "$ex_hdd_dir" ]; then
+    say "making data directory to external HDD..."
+    sudo mkdir -p "$ex_hdd_dir"
+  fi
+
+  babicmd localhost setrunname "$runname" >/dev/null 2>&1
+  print_babicmd "setrunname $runname"
+  babicmd localhost setrunnumber "$runnumber" >/dev/null 2>&1
+  print_babicmd "setrunnumber $runnumber"
+  babicmd localhost setssminfo start "$start_script" >/dev/null 2>&1
+  print_babicmd "setssminfo start $start_script"
+  babicmd localhost setssminfo stop "$stop_script" >/dev/null 2>&1
+  print_babicmd "setssminfo stop $stop_script"
+  babicmd localhost setssminfo on >/dev/null 2>&1
+  print_babicmd "setssminfo on"
+  babicmd localhost sethdlist 0 path "$ex_hdd_dir" >/dev/null 2>&1
+  print_babicmd "sethdlist 0 path $ex_hdd_dir"
+  babicmd localhost sethdlist 0 on >/dev/null 2>&1
+  print_babicmd "sethdlist 0 on"
+  babicmd localhost sethdlist 1 path "$repo_root/ridf" >/dev/null 2>&1
+  print_babicmd "sethdlist 1 path $repo_root/ridf"
+  babicmd localhost sethdlist 1 on >/dev/null 2>&1
+  print_babicmd "sethdlist 1 on"
+
+  pushd "$repo_root" >/dev/null || err "Failed to change directory to $repo_root"
+  uv run pybabilib/init_setting.py || err "Failed to initialize babirl."
+  popd >/dev/null || err "Failed to return to the previous directory."
+
+  say "please check if the babirl is set correctly"
+  babicmd localhost getconfig
+}
+
+prompt_value() {
+  local mode="$1" prompt="$2" default="$3"
+  if [[ "$mode" == "default" ]]; then
+    echo "$default"
+  else
+    gum input --prompt "Enter $prompt: " --value "$default" --placeholder "$default"
+  fi
+}
+
+main() {
+  # Validate required commands
+  need_cmd git
+  need_cmd uv
+  need_cmd babicmd
+  need_cmd gum
+
+  # Validate user
+  validate_user
+
+  # Setup paths and variables
+  local script_dir repo_root exp_name setup_mode
+  script_dir=$(dirname "$(realpath "$0")")
+  exp_name=$(echo "$script_dir" | awk -F'/' '{print $(NF-1)}')
+
+  # Locate Git repository root
+  validate_git_repo "$script_dir"
+  repo_root=$(git -C "$script_dir" rev-parse --show-toplevel)
+
+  # Get setup mode from user
+  setup_mode=$(get_setup_mode)
+
+  # Run setup procedures
+  setup_python_env "$setup_mode" "$repo_root"
+  setup_runsummary "$setup_mode" "$repo_root"
+  setup_babirl "$setup_mode" "$repo_root" "$exp_name"
+
+  # Create symbolic link for log
+  ln -fs "$repo_root/log" "$LOG_PATH"
+
+  say "Completed!"
+}
 
 main "$@"

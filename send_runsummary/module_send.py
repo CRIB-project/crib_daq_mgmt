@@ -9,7 +9,7 @@ from ruamel.yaml import YAML
 
 
 class Sender:
-    __work_dir = os.path.dirname(__file__) + "/../../"
+    __work_dir = os.path.dirname(__file__) + "/../"
     __run_min = -1
     __run_max = -1
     __all = False
