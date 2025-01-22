@@ -1,32 +1,56 @@
 #!/bin/bash
 
-set -u
+set -eu
 
-DAQ_USER="daq"
+# Constants
+readonly DAQ_USER="daq"
+readonly SCRIPT_DIR
+SCRIPT_DIR=$(dirname "$(realpath "$0")")
+readonly REPO_ROOT
+REPO_ROOT=$(git -C "$SCRIPT_DIR" rev-parse --show-toplevel)
 
-if [[ $(whoami) != "$DAQ_USER" ]]; then
-    echo "Run as '$DAQ_USER' user"
-    exit 1
-fi
+# Helper functions
+say() {
+  printf "\33[1mset EBsize\33[0m: %s\n" "$1"
+}
 
-while true; do
+err() {
+  say "ERROR: $1" >&2
+  exit 1
+}
+
+validate_user() {
+  [[ $(whoami) == "$DAQ_USER" ]] || err "Run as $DAQ_USER user."
+}
+
+confirm_mpv_status() {
+  while true; do
     printf "Have you set all MPVs to 'Write OK'? (y/n): "
-    read -r _answer
-    case ${_answer} in
-    y)
-        break
-        ;;
+    read -r answer
+    case $answer in
+    y | Y) return 0 ;;
+    n | N) err "Please set all MPVs to 'Write OK' first." ;;
+    *) say "Please answer y or n." ;;
     esac
-done
+  done
+}
 
-current=$(
-    cd "$(dirname "$0")" || exit 1
-    pwd
-)
-cd "$current/../pybabilib" || exit 1
+set_ebsize() {
+  local size=$1
 
-poetry run python src/set_EBsize.py "$1"
+  # Run Python script to configure MPVs
+  (cd "$REPO_ROOT/pybabilib" && uv run pybabilib/set_EBsize.py "$size")
 
-cd - &>/dev/null || exit 1
+  # Set event buffer size on localhost
+  babicmd localhost setebsize "$size"
+}
 
-babicmd localhost setebsize "$1"
+main() {
+  [[ $# -eq 1 ]] || err "Usage: $(basename "$0") <size>"
+
+  validate_user
+  confirm_mpv_status
+  set_ebsize "$1"
+}
+
+main "$@"

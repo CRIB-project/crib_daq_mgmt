@@ -1,12 +1,35 @@
 #!/bin/bash
 
-if [[ $(whoami) != "root" ]]; then
-    echo "Run as superuser"
-    exit 1
-fi
+set -eu
 
-echo "removing pid files..."
-rm -f /var/run/babi*
+# Constants
+readonly REQUIRED_USER="root"
 
-echo "killing process..."
-pkill babi
+# Helper functions
+say() {
+  printf "\33[1mbabirl kill\33[0m: %s\n" "$1"
+}
+
+err() {
+  say "ERROR: $1" >&2
+  exit 1
+}
+
+validate_user() {
+  [[ $(whoami) == "$REQUIRED_USER" ]] || err "Run as superuser."
+}
+
+kill_babirl_processes() {
+  say "Removing pid files..."
+  rm -f /var/run/babi*
+
+  say "Killing babirl processes..."
+  pkill babi || true
+}
+
+main() {
+  validate_user
+  kill_babirl_processes
+}
+
+main "$@"

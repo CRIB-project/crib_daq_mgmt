@@ -1,19 +1,48 @@
 #!/bin/bash
 
-DAQ_USER="daq"
+set -eu
 
-if [[ $(whoami) != "$DAQ_USER" ]]; then
-    echo "Run as '$DAQ_USER' user"
-    exit 1
-fi
+readonly DAQ_USER="daq"
 
-current=$(
-    cd "$(dirname "$0")" || exit 1
-    pwd
-)
+# Helper functions
+say() {
+  printf "\33[1msend_runsummary\33[0m: %s\n" "$1"
+}
 
-cd "$current/../send_runsummary" || exit 1
+err() {
+  say "ERROR: $1" >&2
+  exit 1
+}
 
-poetry run python src/send_runsummary.py "$@"
+need_cmd() {
+  if ! command -v "$1" >/dev/null 2>&1; then
+    err "need '$1' (command not found)"
+  fi
+}
 
-cd - &>/dev/null || exit 1
+validate_user() {
+  [[ $(whoami) == "$DAQ_USER" ]] || err "Run as '$DAQ_USER' user."
+}
+
+validate_git_repo() {
+  local dir="$1"
+  git -C "$dir" rev-parse --show-toplevel >/dev/null 2>&1 || err "Not a Git repository."
+}
+
+main() {
+  need_cmd uv
+  need_cmd git
+
+  validate_user
+
+  local script_dir repo_root
+  script_dir=$(dirname "$(realpath "$0")")
+  validate_git_repo "$script_dir"
+  repo_root=$(git -C "$script_dir" rev-parse --show-toplevel)
+
+  pushd "$repo_root" >/dev/null || err "Failed to change directory to $repo_root"
+  uv run send_runsummary/send_runsummary.py "$@"
+  popd >/dev/null || err "Failed to return to the previous directory."
+}
+
+main "$@"

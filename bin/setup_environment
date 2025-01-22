@@ -115,7 +115,7 @@ setup_runsummary_interactive() {
     copy_json_key "$json_path"
     if gum confirm "Do you want to run the connection test? (need to prepare Google Sheets in advance)"; then
       say "Running connection test..."
-      uv run pytest send_runsummary/test_sender.py
+      uv run pytest send_runsummary/test_sender.py || say "failed. need to setup the Google Sheets"
     else
       say "Skipping connection test..."
     fi

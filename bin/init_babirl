@@ -1,24 +1,47 @@
 #!/bin/bash
 
-if [[ $(whoami) != "root" ]]; then
-    echo "Run as superuser"
-    exit 1
-fi
+set -eu
 
-echo "start babissm, babimo, babinfo, babild, babian..."
-systemctl restart babian
-systemctl restart babimo
+# Constants
+readonly BABIRL_BIN="/usr/babirl/bin"
+readonly REQUIRED_USER="root"
 
-/usr/babirl/bin/babissm
-/usr/babirl/bin/babinfo
-/usr/babirl/bin/babild -l 1
+# Helper functions
+say() {
+  printf "\33[1mbabirl init\33[0m: %s\n" "$1"
+}
 
-current=$(
-    cd "$(dirname "$0")" || exit 1
-    pwd
-)
+err() {
+  say "ERROR: $1" >&2
+  exit 1
+}
 
-# shellcheck disable=SC1091
-. "$current/mpvrestart"
+validate_user() {
+  [[ $(whoami) == "$REQUIRED_USER" ]] || err "Run as superuser."
+}
 
-echo "finished."
+start_babirl_services() {
+  say "Starting babirl services..."
+  systemctl restart babian
+  systemctl restart babimo
+
+  "$BABIRL_BIN/babissm"
+  "$BABIRL_BIN/babinfo"
+  "$BABIRL_BIN/babild" -l 1
+}
+
+main() {
+  validate_user
+
+  start_babirl_services
+
+  local script_dir
+  script_dir=$(dirname "$(realpath "$0")")
+
+  # shellcheck disable=SC1091
+  . "$script_dir/mpvrestart"
+
+  say "Completed!"
+}
+
+main "$@"
