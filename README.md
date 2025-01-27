@@ -1,14 +1,14 @@
 # CRIB DAQ management scripts
 
 CRIB currently uses [babirl + MPV](https://ribf.riken.jp/RIBFDAQ/index.php?DAQ/Information) configuration.
-Useful scripts have been created using python and shellscript for ease of set-up and management.
+Useful scripts have been developed using `Python` and `Shellscript` for ease of set-up and management.
 
 As for the python environment, we are using ["uv" package manager](https://docs.astral.sh/uv/).
-Please install the uv in advance.
+Please install the `uv` in advance.
 
 # Usage
 
-It assume the scripts are stored in $HOME/exp directory, that is:
+It assume the scripts are stored in `$HOME/exp` directory, that is:
 
 ```shell
 > cd ~
@@ -26,8 +26,7 @@ It assume the scripts are stored in $HOME/exp directory, that is:
 ...
 ```
 
-Also the data files (ridf files) are assumed to be stored ./ridf and /Data directory.
-The /Data directory is assumed to be mounted by external storage, and if you want to change the name, please modify the "bin/setup_environment" file.
+Also the data files (ridf files) are assumed to be stored `(workdir)/ridf` (internal storage) and `/Data` (external storage) directory.
 
 ```shell
 > cd ~/exp/expname
@@ -48,29 +47,23 @@ ridf
 └── ****.ridf
 ```
 
-
 After checking these requirements, you can start to make the environment by coping the files from previous experiment or `git clone` from GitHub repository.
-
-- Copy from previous experiment
-```shell
-> cd ~/exp
-> cp -r expname_pre expname_new
-```
 
 - Clone from GitHub repository
 
 ```shell
 > cd ~/exp
-> git clone https://github.com/okawak/crib_daq_mgmt.git expname
+> git clone https://github.com/CRIB-project/crib_daq_mgmt.git expname
+```
+
+- **NOT RECOMMENDED** Copy from previous experiment (please exclude `ridf` files)
+
+```shell
+> cd ~/exp
+> cp -r expname_pre expname_new
 ```
 
 # Initial setup
-
-The .bashrc/.zshrc setup
-
-```shell
-export EXP_NAME="hoge"
-```
 
 Initial setup
 
@@ -79,9 +72,21 @@ Initial setup
 > ./setup_environment
 ```
 
-## useful scripts
+Based on the inputted `expname`, initial setup will performed automatically.
 
-```sh
+# For Usability
+
+In the `.bashrc/.zshrc`, set the `EXP_NAME` environment variable to automatically move to this working directory.
+
+```shell
+export EXP_NAME="hoge"
+```
+
+The alias `alias dcd='cd $HOME/exp/$EXP_NAME'` will work.
+
+## Useful Scripts
+
+```shell
 # initialize the babirl process
 sudo ./bin/init_babirl
 
